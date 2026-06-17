@@ -108,15 +108,13 @@ et 12 biomes. L'idée c'était de voir jusqu'où on pouvait pousser le projet.
 
 ## Captures d'écran
 
-> *Ajoutez vos captures ici — remplacez les exemples ci-dessous.*
-
 | Carte classique | Heightmap Mars | Île générée |
 |:-----------:|:--------------:|:----------------:|
-| `maps/test_maps/42.fdf` | `maps/test_maps/mars.fdf` | Touche `2` dans le bonus |
+| ![42](img/42.png) | ![Mars](img/mars.png) | ![Ile](img/island.png) |
 
 | Montagnes générées | Fjords générés | Thème arc-en-ciel |
 |:-------------------:|:----------------:|:-------------:|
-| Touche `1` dans le bonus | Touche `5` dans le bonus | Touche `C` (2×) |
+| ![Montagne](img/mountain.png) | ![Fjords](img/fjords.png) | ![Arc-en-ciel](img/rainbow.png) |
 
 ---
 
@@ -513,7 +511,7 @@ fdf/
 │       ├── events_bonus.c       # loop_hook, redraw, quit
 │       ├── mouse_bonus.c        # Hooks souris : pan, rotation, zoom, release
 │       ├── keys_bonus.c         # Tous les handlers clavier + déclenchement mapgen
-│       ├── color_bonus.c        # rainbow_color()
+│       ├── color_bonus.c        # rainbow_color(), getters fdf_theme/preset/size
 │       ├── utils_bonus.c        # Utilitaires communs
 │       ├── screenshot_bonus.c   # Sauvegarde BMP via write() direct
 │       ├── perlin_bonus.c       # Implémentation du bruit de Perlin
@@ -569,6 +567,32 @@ des artefacts de grille dans le terrain généré, surtout sur les grandes maps.
 Quand on tourne à la souris (clic droit + drag), le centre de la map reste au même endroit
 à l'écran. Ça se fait en projetant le centre avant et après la rotation, et en compensant
 l'offset. Sans ça, la map dérive à chaque rotation et c'est vite inutilisable.
+
+**Cache trigonométrique.**
+La projection isométrique bonus applique 3 rotations 3D : `iso_project` avait besoin de
+`cos`/`sin` 6 fois par point. Sur une map 1000×1000 c'est 6 000 000 appels à des fonctions
+flottantes par frame. La solution : `update_trig` précalcule les 6 valeurs en tout début
+de `draw_map` et les stocke dans `t_cam`. Toute la boucle de dessin lit ces caches — zéro
+appel trig pendant le rendu.
+
+**Buffer de rangée (double-buffer pattern).**
+La version naïve de `draw_map` appelle `iso_project` 3 fois par point (segment horizontal,
+vertical, et depuis la rangée suivante). En allouant deux buffers d'une rangée (`cur`/`nxt`)
+et en ne remplissant `nxt` qu'une fois avant de swapper, chaque point est projeté exactement
+une fois — 1 000 000 projections au lieu de 3 000 000 sur une map 1000×1000.
+
+**Skip des segments sous-pixel.**
+À petit zoom, beaucoup de points voisins projettent sur le même pixel. Appeler `draw_line`
+pour un segment de longueur nulle dessine un pixel déjà dessiné sans rien apporter. Un test
+simple `p.x == q.x && p.y == q.y` avant chaque appel filtre ces cas et économise des
+millions d'itérations Bresenham inutiles sur les grandes maps dézoomées.
+
+**Struct `t_fdf` compactée avec bitmask.**
+7 champs `int` booléens ou petits entiers (`dirty`, `auto_rotate`, `is_dragging`,
+`is_rotating`, `color_theme`, `preset_id`, `size_id`) ont été regroupés en un seul `int flags`.
+Les opérations bitwise (`|=`, `&=~`, `^=`) remplacent les affectations simples et les
+getters `fdf_theme/preset/size` extraient les valeurs multi-bits. En bonus : moins de champs
+à déclarer dans la struct, ce qui aide à rester conforme à la norme 42.
 
 ---
 

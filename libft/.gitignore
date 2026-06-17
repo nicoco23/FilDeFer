@@ -1,0 +1,54 @@
+# Compiled object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Static libraries and executables
+*.a
+*.so
+a.out
+libft.a
+*.out
+*.exe
+
+# Dependency and debug files
+*.d
+*.dSYM/
+*.dmp
+core
+
+# Backup and swap files
+*~
+*.swp
+*.swo
+.#*
+#*#
+
+# IDEs and editors
+.vscode/
+.idea/
+*.iml
+
+# macOS
+.DS_Store
+
+# Build directories, logs and temp
+build/
+bin/
+obj/
+dist/
+tmp/
+temp/
+*.log
+*.tmp
+
+# Misc
+tags
+.gdb_history
+.env
+
+#Main and tests
+
+main*
+libft_hard_tests*
