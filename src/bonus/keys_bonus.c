@@ -65,11 +65,29 @@ static t_preset	pick_preset(int id)
 	return (preset_mountain());
 }
 
+static int	key_to_preset(int key)
+{
+	if (key >= KEY_1 && key <= KEY_5)
+		return (key - KEY_1);
+	if (key == KEY_AZ_1)
+		return (0);
+	if (key == KEY_AZ_2)
+		return (1);
+	if (key == KEY_AZ_3)
+		return (2);
+	if (key == KEY_AZ_4)
+		return (3);
+	if (key == KEY_AZ_5)
+		return (4);
+	return (-1);
+}
+
 /* z_max suit la taille : sans ça une map 1000x1000 paraît plate. */
 static void	handle_mapgen(int key, t_fdf *fdf)
 {
 	static int	sizes[5] = {100, 200, 300, 500, 1000};
 	t_preset	cfg;
+	int			preset;
 
 	if (key == KEY_G)
 		fdf->seed = rand();
@@ -79,8 +97,11 @@ static void	handle_mapgen(int key, t_fdf *fdf)
 		fdf->flags = (fdf->flags & ~FDF_SIZE_MASK)
 			| (((fdf_size(fdf) + 1) % 5) << FDF_SIZE_SHIFT);
 	else
+	{
+		preset = key_to_preset(key);
 		fdf->flags = (fdf->flags & ~FDF_PRESET_MASK)
-			| ((key - KEY_1) << FDF_PRESET_SHIFT);
+			| (preset << FDF_PRESET_SHIFT);
+	}
 	cfg = pick_preset(fdf_preset(fdf));
 	cfg.width = sizes[fdf_size(fdf)];
 	cfg.height = sizes[fdf_size(fdf)];
@@ -89,6 +110,13 @@ static void	handle_mapgen(int key, t_fdf *fdf)
 	generate_fdf_file("/tmp/fdf_gen.fdf", fdf->seed, &cfg);
 	fdf->map = parse_map("/tmp/fdf_gen.fdf");
 	init_cam(fdf);
+}
+
+static int	is_preset_key(int key)
+{
+	return ((key >= KEY_1 && key <= KEY_5)
+		|| key == KEY_AZ_1 || key == KEY_AZ_2 || key == KEY_AZ_3
+		|| key == KEY_AZ_4 || key == KEY_AZ_5);
 }
 
 int	key_hook(int key, void *param)
@@ -109,7 +137,7 @@ int	key_hook(int key, void *param)
 	else if (key == KEY_RIGHT)
 		fdf->cam->x_off += 20;
 	else if (key == KEY_G || key == KEY_N || key == KEY_TAB
-		|| (key >= KEY_1 && key <= KEY_5))
+		|| is_preset_key(key))
 		handle_mapgen(key, fdf);
 	else
 		handle_view(key, fdf);

@@ -62,6 +62,11 @@
 # define KEY_3        51
 # define KEY_4        52
 # define KEY_5        53
+# define KEY_AZ_1     38    /* & AZERTY */
+# define KEY_AZ_2     233   /* é AZERTY */
+# define KEY_AZ_3     34    /* " AZERTY */
+# define KEY_AZ_4     39    /* ' AZERTY */
+# define KEY_AZ_5     40    /* ( AZERTY */
 
 /* Boutons souris */
 # define MOUSE_LEFT   1
